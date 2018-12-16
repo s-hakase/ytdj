@@ -9,12 +9,15 @@
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate",
+    "generate:gh-pages": "DEPLOY_ENV=GH_PAGES nuxt generate",
+    "deploy": "push-dir --dir=dist --branch=gh-pages --cleanup",
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore .",
     "precommit": "npm run lint"
   },
   "dependencies": {
     "buefy": "^0.6.6",
     "nuxt": "^1.0.0",
+    "push-dir": "^0.4.1",
     "v-hotkey": "^0.2.3",
     "vue-cookies": "^1.5.6",
     "vue-youtube-embed": "^2.2.1"

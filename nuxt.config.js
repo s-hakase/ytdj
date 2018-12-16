@@ -1,3 +1,9 @@
+const routerBase = process.env.DEPLOY_ENV === 'GH_PAGES' ? {
+  router: {
+    base: '/<repository-name>/'
+  }
+} : {}
+
 module.exports = {
   /*
   ** Headers of the page
@@ -63,5 +69,9 @@ module.exports = {
     '~plugins/v-hotkey',
     '~plugins/vue-cookies',
     { src: '~plugins/vue-youtube-embed', ssr: false }
-  ]
+  ],
+  /**
+   * router
+   */
+  ...routerBase
 }
