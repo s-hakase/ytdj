@@ -1,20 +1,18 @@
 <template>
   <div class="background">
     <no-ssr v-if="deckA" class="video-background" :style="`opacity: ${opacityA}`">
-      <youtube :video-id="deckA.id" @ready="readyA" player-width="100%" player-height="100%" />
+      <youtube :video-id="deckA.id.videoId" @ready="readyA" player-width="100%" player-height="100%" />
     </no-ssr>
     <no-ssr v-if="deckB" class="video-background" :style="`opacity: ${opacityB}`">
-      <youtube :video-id="deckB.id" @ready="readyB" player-width="100%" player-height="100%" />
+      <youtube :video-id="deckB.id.videoId" @ready="readyB" player-width="100%" player-height="100%" />
     </no-ssr>
     <section class="container ui-container" v-hotkey="keymap">
       <div class="columns">
         <div class="column">
           <deck :info="deckA" :current-time="fmtTimeA"
-            :play-click-handler="playA"
-            :mute-click-handler="muteA" />
-          <div>
-            Deck A Vol.<input type="range" class="volume-range" v-model="volumeRateA" />
-          </div>
+            @on-play="playA"
+            @on-mute="mute(playerA)"
+            @change-volume="changeVolumeA" />{{ volumeRateA }}
         </div>
         <div class="column is-2 has-text-centered fader-container">
           <div class="is-absolute-bottom">
@@ -24,11 +22,9 @@
         </div>
         <div class="column">
           <deck :info="deckB" :current-time="fmtTimeB"
-            :play-click-handler="playB"
-            :mute-click-handler="muteB" />
-          <div>
-            Deck B Vol.<input type="range" class="volume-range" v-model="volumeRateB" :mute-click-handler="muteA" />
-          </div>
+            @on-play="playB"
+            @on-mute="mute(playerB)"
+            @change-volume="changeVolumeB" />{{ volumeRateB }}
         </div>
       </div>
       <search />
@@ -39,17 +35,15 @@
 <script>
 import Deck from '@/components/Deck';
 import Search from '@/components/Search';
-let intervalIdA, intervalIdB;
+let intervalIdA, intervalIdB, intervalIds = {};
 export default {
   data (context) {
     return {
-      videoId: '',
-      videoId2: '',
+      playerA: null,
+      playerB: null,
       faderValue: 100,
       volumeRateA: 100,
       volumeRateB: 100,
-      currentTimeA: 0,
-      currentTimeB: 0,
       durationA: 0,
       durationB: 0
     }
@@ -64,10 +58,10 @@ export default {
           keydown: this.playB
         },
         'x': {
-          keydown: this.muteA
+          keydown: ()=>{this.mute(this.playerA)}
         },
         ',': {
-          keydown: this.muteB
+          keydown: ()=>{this.mute(this.playerB)}
         }
       }
     },
@@ -84,18 +78,20 @@ export default {
       return this.faderValue / 200;
     },
     fmtTimeA () {
-      return formatTime(this.currentTimeA);
+      return formatTime(this.$store.state.currentTime.A || 0);
     },
     fmtTimeB () {
-      return formatTime(this.currentTimeB);
+      return formatTime(this.$store.state.currentTime.B || 0);
     }
   },
   methods: {
     readyA (e) {
       this.playerA = e.target;
+      if (!!intervalIdA) clearInterval(intervalIdA)
     },
     readyB (e) {
       this.playerB = e.target;
+      if (!!intervalIdB) clearInterval(intervalIdB)
     },
     playA () {
       if (this.playerA.getPlayerState() === 1) {
@@ -104,7 +100,8 @@ export default {
       } else {
         this.playerA.playVideo();
         intervalIdA = setInterval(() => {
-          this.currentTimeA = this.playerA.getCurrentTime();
+          const currentTime = this.playerA.getCurrentTime()
+          this.$store.commit('setCurrentTime', ['A', currentTime]);
         }, 100);
       }
     },
@@ -115,24 +112,27 @@ export default {
       } else {
         this.playerB.playVideo();
         intervalIdB = setInterval(() => {
-          this.currentTimeB = this.playerB.getCurrentTime();
+          const currentTime = this.playerB.getCurrentTime()
+          this.$store.commit('setCurrentTime', ['B', currentTime])
         }, 100);
       }
     },
-    muteA () {
-      if (this.playerA.isMuted()) {
-        this.playerA.unMute();
+    mute (player) {
+      if (!player) {
+        return;
+      }
+      if (player.isMuted()) {
+        player.unMute();
       } else {
-        this.playerA.mute();
+        player.mute();
       }
     },
-    muteB () {
-      if (this.playerB.isMuted()) {
-        this.playerB.unMute();
-      } else {
-        this.playerB.mute();
-      }
-    }
+    changeVolumeA (volume) {
+      this.volumeRateA = volume
+    },
+    changeVolumeB (volume) {
+      this.volumeRateB = volume
+    },
   },
   watch: {
     faderValue: calculateVolumes,
@@ -140,7 +140,7 @@ export default {
     volumeRateB: calculateVolumes
   },
   mounted () {
-    this.$store.dispatch('getInfo', this.$cookies.get('videoIdA') || 'fzQ6gRAEoy0')
+    this.$store.dispatch('getInfo', this.$cookies.get('videoIdA') || 'HAIDqt2aUek')
       .then(item => {
         this.$store.commit('setToDeckA', item);
       }).catch(err => {
@@ -177,13 +177,14 @@ function calculateVolumes() {
   }
 }
 
-function formatTime (seconds) {
+function formatTime (seconds) { // TODO: formatに移す
   let hh = ('00' + Math.floor(seconds / 3600)).slice(-2),
       mm = ('00' + Math.floor((seconds % 3600) / 60)).slice(-2),
       ss = ('00' + Math.floor(seconds % 60)).slice(-2);
 
   return `${hh}:${mm}:${ss}`;
 }
+
 </script>
 
 <style>

@@ -42,7 +42,7 @@ export default {
       this.$store.commit('setToDeckA', item);
       this.$cookies.set('videoIdA', item.id.videoId);
     },
-    setB (id) {
+    setB (item) {
       this.$store.commit('setToDeckB', item);
       this.$cookies.set('videoIdB', item.id.videoId);
     },

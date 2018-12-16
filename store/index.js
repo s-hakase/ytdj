@@ -1,16 +1,16 @@
 export const state = () => ({
   deckA: null,
-  currentTimeA: 0,
   durationA: 0,
   playerA: null,
   deckB: null,
-  currentTimeB: 0,
   durationB: 0,
   playerB: null,
-  searchResults: []
+  searchResults: [],
+  currentTime: {
+    A: 0,
+    B: 0
+  }
 })
-
-let intervalIdA, intervalIdB;
 
 export const mutations = {
   setToDeckA (state, vidObj) {
@@ -21,6 +21,11 @@ export const mutations = {
   },
   setSearchResults (state, results) {
     state.searchResults = results;
+  },
+  setCurrentTime (state, obj) {
+    let newObj = JSON.parse(JSON.stringify(state.currentTime));
+    newObj[obj[0]] = obj[1];
+    state.currentTime = newObj;
   }
 }
 
@@ -32,7 +37,7 @@ export const actions = {
       type: 'video',
       videoEmbeddable: true,
       maxResults: 25,
-      key: 'AIzaSyD1g6G3el9JUu-huAnkol0bpJJfkGPFagE'
+      key: 'AIzaSyA4U03XcR2FOLp-2HAHg0cUNJPNpeCxpi4'
     };
     const queryString = Object.keys(queries)
       .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(queries[key])}`)
@@ -54,7 +59,7 @@ export const actions = {
     const queries = {
       part: 'snippet',
       id: id,
-      key: 'AIzaSyD1g6G3el9JUu-huAnkol0bpJJfkGPFagE'
+      key: 'AIzaSyA4U03XcR2FOLp-2HAHg0cUNJPNpeCxpi4'
     };
     const queryString = Object.keys(queries)
       .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(queries[key])}`)
